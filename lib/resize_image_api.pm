@@ -70,7 +70,7 @@ sub handler {
             # Use LWP::Simple to save the original image 
             getstore($params->{image_url}, "/tmp/org_$file_name");
 
-            # Use Image::<agick Do the resize
+            # Use Image::Magick Do the resize
             my $im = Image::Magick->new();
             my $file = "/tmp/org_$file_name";
             $im->read($file);
@@ -81,12 +81,13 @@ sub handler {
             $im->Scale(%$params);
             $im->Write( "/tmp/$file_name" );
             $r->content_type('application/json');
-            my $new_image_url = $ENV{HTTP_HOST} . "/images/$file_name";
-            my $org_image_url = $ENV{HTTP_HOST} . "/images/org_$file_name";
+            my $new_image_url = 'http://' . $ENV{HTTP_HOST} . "/images/$file_name";
+            my $org_image_url = 'http://' . $ENV{HTTP_HOST} . "/images/org_$file_name";
             my $re_args = {
                 orignal => $org_image_url,
                 new     => $new_image_url,
             };
+            # respond in JSON with original and new image url
             print to_json( $re_args );
             return Apache2::Const::OK;
         }

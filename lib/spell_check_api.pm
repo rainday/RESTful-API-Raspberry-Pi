@@ -46,9 +46,15 @@ sub handler {
     my $r = shift;
     my $q = CGI->new();
     my $args = { map{ $_ => $q->param($_) } $q->param };
-    # max number of returning suggested words
+    # Max number of returning suggested words
     my $max  = $args->{max} || 10;
 
+    # Return if word does not exist
+    if ( !$args->{word} ) {
+        $r->custom_response(Apache2::Const::HTTP_BAD_REQUEST, 'word not passed in');
+        return Apache2::Const::HTTP_BAD_REQUEST
+    }
+    
     my $word = $args->{word};
     if ( $r->method eq 'GET' ) {
         my $SPELLER = check_setup( $args );
@@ -93,16 +99,21 @@ sub check_setup {
     return $SPELLER;
 }
 
-# for sentence or multiple words
+# For sentence or multiple words
 sub multi_suggestion {
     my $SPELLER = shift;
     my $args    = shift;
     my $word    = $args->{word};
     my $max  = $args->{max} || 10;
 
-    $word =~ s/\,|\.//g;
+    # Removing all these punctuation
+    $word =~ s/[\.,-\/#!$%\^&\*;:{}=\-_`~()@]//g;
+    
+    # Split by space a double quote 
     my @words = split(/[\"\s+]/, $word);
     my $data = {};
+    
+    # Check each word and add them in to hash if the word is not correct
     foreach my $w ( @words ) {
         next if ( $SPELLER->check( $w ) );
         my @suggestions = $SPELLER->suggest( $w );
